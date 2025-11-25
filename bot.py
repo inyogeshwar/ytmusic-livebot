@@ -330,9 +330,24 @@ async def logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info(f"Web server started on port {port}")
 
     def main():
+        print("🚀 Starting Bot...")
+        
+        # Debug Environment
+        print(f"📝 Checking Environment Variables...")
         if not BOT_TOKEN:
-            print("❌ BOT_TOKEN not found! Set it in environment variables.")
+            print("❌ FATAL: BOT_TOKEN is missing! The bot cannot start.")
+            print("👉 Please go to Render Dashboard -> Environment and add BOT_TOKEN.")
+            # Sleep to allow logs to be flushed/read before exit
+            import time
+            time.sleep(10)
             return
+        else:
+            print("✅ BOT_TOKEN found.")
+
+        if not ADMIN_ID:
+            print("⚠️ WARNING: ADMIN_ID is missing.")
+        else:
+            print("✅ ADMIN_ID found.")
 
         # Use post_init to start web server before bot starts polling
         application = ApplicationBuilder().token(BOT_TOKEN).post_init(start_web_server).build()
