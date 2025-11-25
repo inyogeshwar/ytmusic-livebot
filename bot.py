@@ -317,7 +317,9 @@ async def logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async def start_web_server(application):
         app = web.Application()
         app.router.add_get("/", health_check)
+        app.router.add_get("/", health_check)
         app.router.add_get("/health", health_check)
+        app.router.add_get("/healthz", health_check)
         
         runner = web.AppRunner(app)
         await runner.setup()
