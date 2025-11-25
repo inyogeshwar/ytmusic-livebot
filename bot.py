@@ -226,17 +226,18 @@ async def start_stream(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         cmd.extend(["-map", "0:v", "-map", "0:a?"])
 
-    # Encoding Flags (Optimized for Railway Free Tier)
+    # Encoding Flags (Optimized for stable YouTube streaming)
     cmd.extend([
         "-c:v", "libx264",
         "-preset", "veryfast",
-        "-b:v", "1500k",
-        "-maxrate", "1500k",
-        "-bufsize", "3000k",
+        "-b:v", "2500k",
+        "-maxrate", "2500k",
+        "-bufsize", "5000k",
         "-pix_fmt", "yuv420p",
-        "-g", "50",
+        "-g", "60",
+        "-keyint_min", "60",
         "-c:a", "aac",
-        "-b:a", "96k",
+        "-b:a", "128k",
         "-ar", "44100",
         "-f", "flv",
         rtmp_url
