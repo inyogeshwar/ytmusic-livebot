@@ -308,62 +308,61 @@ async def logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Error reading logs: {e}")
 
-    # Web Server for Render/Koyeb
-    from aiohttp import web
+# Web Server for Render/Koyeb
+from aiohttp import web
+
+async def health_check(request):
+    return web.Response(text="Bot is alive!")
+
+async def start_web_server(application):
+    app = web.Application()
+    app.router.add_get("/", health_check)
+    app.router.add_get("/health", health_check)
+    app.router.add_get("/healthz", health_check)
     
-    async def health_check(request):
-        return web.Response(text="Bot is alive!")
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info(f"Web server started on port {port}")
 
-    async def start_web_server(application):
-        app = web.Application()
-        app.router.add_get("/", health_check)
-        app.router.add_get("/", health_check)
-        app.router.add_get("/health", health_check)
-        app.router.add_get("/healthz", health_check)
-        
-        runner = web.AppRunner(app)
-        await runner.setup()
-        
-        port = int(os.environ.get("PORT", 8080))
-        site = web.TCPSite(runner, "0.0.0.0", port)
-        await site.start()
-        logger.info(f"Web server started on port {port}")
+def main():
+    print("🚀 Starting Bot...")
+    
+    # Debug Environment
+    print(f"📝 Checking Environment Variables...")
+    if not BOT_TOKEN:
+        print("❌ FATAL: BOT_TOKEN is missing! The bot cannot start.")
+        print("👉 Please go to Render Dashboard -> Environment and add BOT_TOKEN.")
+        # Sleep to allow logs to be flushed/read before exit
+        import time
+        time.sleep(10)
+        return
+    else:
+        print("✅ BOT_TOKEN found.")
 
-    def main():
-        print("🚀 Starting Bot...")
-        
-        # Debug Environment
-        print(f"📝 Checking Environment Variables...")
-        if not BOT_TOKEN:
-            print("❌ FATAL: BOT_TOKEN is missing! The bot cannot start.")
-            print("👉 Please go to Render Dashboard -> Environment and add BOT_TOKEN.")
-            # Sleep to allow logs to be flushed/read before exit
-            import time
-            time.sleep(10)
-            return
-        else:
-            print("✅ BOT_TOKEN found.")
+    if not ADMIN_ID:
+        print("⚠️ WARNING: ADMIN_ID is missing.")
+    else:
+        print("✅ ADMIN_ID found.")
 
-        if not ADMIN_ID:
-            print("⚠️ WARNING: ADMIN_ID is missing.")
-        else:
-            print("✅ ADMIN_ID found.")
+    # Use post_init to start web server before bot starts polling
+    application = ApplicationBuilder().token(BOT_TOKEN).post_init(start_web_server).build()
 
-        # Use post_init to start web server before bot starts polling
-        application = ApplicationBuilder().token(BOT_TOKEN).post_init(start_web_server).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("set_stream", set_stream_key))
+    application.add_handler(CommandHandler("start_stream", start_stream))
+    application.add_handler(CommandHandler("stop_stream", stop_stream))
+    application.add_handler(CommandHandler("status", status))
+    application.add_handler(CommandHandler("logs", logs))
+    application.add_handler(CommandHandler("set_video", set_video))
+    application.add_handler(CommandHandler("set_audio", set_audio))
+    application.add_handler(MessageHandler(filters.VIDEO | filters.AUDIO | filters.Document.ALL, handle_document))
 
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("set_stream", set_stream_key))
-        application.add_handler(CommandHandler("start_stream", start_stream))
-        application.add_handler(CommandHandler("stop_stream", stop_stream))
-        application.add_handler(CommandHandler("status", status))
-        application.add_handler(CommandHandler("logs", logs))
-        application.add_handler(CommandHandler("set_video", set_video))
-        application.add_handler(CommandHandler("set_audio", set_audio))
-        application.add_handler(MessageHandler(filters.VIDEO | filters.AUDIO | filters.Document.ALL, handle_document))
+    print("🤖 Bot is running...")
+    application.run_polling()
 
-        print("🤖 Bot is running...")
-        application.run_polling()
-
-    if __name__ == "__main__":
-        main()
+if __name__ == "__main__":
+    main()
